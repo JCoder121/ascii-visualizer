@@ -1,4 +1,4 @@
-export const THEME = {
+export const VAPORWAVE = {
   bg: '#0a0118',
   heroA: '#ff2d95',
   heroB: '#00e5ff',
@@ -6,6 +6,14 @@ export const THEME = {
   skyline: '#00b3a4',
   stars: '#8a7aa8',
   accent: '#ffd319',
+};
+
+export const MATRIX = {
+  bg: '#020806',
+  head: '#00ff41',
+  trail: '#008f11',
+  highlight: '#c8ffd0',
+  accent: '#eaffea',
 };
 
 export const RAMP = '.:-=+*#%@';

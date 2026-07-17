@@ -1,16 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { THEME, RAMP, lerpColor, dim } from '../src/theme.js';
+import { VAPORWAVE, MATRIX, RAMP, lerpColor, dim } from '../src/theme.js';
 
-test('palette matches spec', () => {
-  assert.equal(THEME.bg, '#0a0118');
-  assert.equal(THEME.heroA, '#ff2d95');
-  assert.equal(THEME.heroB, '#00e5ff');
-  assert.equal(THEME.grid, '#b64fff');
-  assert.equal(THEME.skyline, '#00b3a4');
-  assert.equal(THEME.stars, '#8a7aa8');
-  assert.equal(THEME.accent, '#ffd319');
+test('vaporwave palette matches spec', () => {
+  assert.equal(VAPORWAVE.bg, '#0a0118');
+  assert.equal(VAPORWAVE.heroA, '#ff2d95');
+  assert.equal(VAPORWAVE.heroB, '#00e5ff');
+  assert.equal(VAPORWAVE.grid, '#b64fff');
+  assert.equal(VAPORWAVE.skyline, '#00b3a4');
+  assert.equal(VAPORWAVE.stars, '#8a7aa8');
+  assert.equal(VAPORWAVE.accent, '#ffd319');
   assert.equal(RAMP, '.:-=+*#%@');
+});
+
+test('matrix palette matches spec', () => {
+  assert.equal(MATRIX.bg, '#020806');
+  assert.equal(MATRIX.head, '#00ff41');
+  assert.equal(MATRIX.trail, '#008f11');
+  assert.equal(MATRIX.highlight, '#c8ffd0');
+  assert.equal(MATRIX.accent, '#eaffea');
 });
 
 test('lerpColor endpoints and quantization', () => {
