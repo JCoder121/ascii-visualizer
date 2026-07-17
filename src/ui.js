@@ -1,15 +1,17 @@
 export class UI {
-  constructor({ onFile, onMic, onToggle }) {
+  constructor({ onFile, onMic, onToggle, onCycleTheme }) {
     this.controls = document.getElementById('controls');
     this.playBtn = document.getElementById('play-btn');
     this.micBtn = document.getElementById('mic-btn');
     this.nameEl = document.getElementById('track-name');
     this.timeEl = document.getElementById('track-time');
     this.idleEl = document.getElementById('idle-prompt');
+    this.themeBtn = document.getElementById('theme-btn');
     this.hideTimer = null;
 
     this.playBtn.addEventListener('click', onToggle);
     this.micBtn.addEventListener('click', onMic);
+    this.themeBtn.addEventListener('click', (e) => { e.stopPropagation(); onCycleTheme(); });
     addEventListener('keydown', (e) => {
       if (e.code === 'Space') { e.preventDefault(); onToggle(); }
     });
@@ -35,11 +37,12 @@ export class UI {
     this.hideTimer = setTimeout(() => this.controls.classList.add('hidden'), 3000);
   }
 
-  update({ trackName, playing, time, duration, mode }) {
+  update({ trackName, playing, time, duration, mode, themeName }) {
     this.playBtn.textContent = playing ? '❚❚' : '▸';
     this.micBtn.classList.toggle('active', mode === 'mic');
     this.nameEl.textContent = trackName || '—';
     this.idleEl.style.display = mode === 'idle' ? '' : 'none';
+    if (themeName) this.themeBtn.textContent = `◈ ${themeName}`;
     const fmt = (s) => {
       if (!isFinite(s) || s <= 0) return '';
       const m = Math.floor(s / 60);

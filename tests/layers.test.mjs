@@ -4,7 +4,7 @@ import assert from 'node:assert';
 import { Stars } from '../src/layers/stars.js';
 import { GridFloor } from '../src/layers/grid.js';
 import { Skyline } from '../src/layers/skyline.js';
-import { THEME } from '../src/theme.js';
+import { VAPORWAVE as THEME } from '../src/theme.js';
 
 function mockGrid(cols, rows) {
   const calls = [];
