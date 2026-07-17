@@ -1,0 +1,45 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background: #0a0118; }
+#view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+/* CRT: scanlines + vignette (pointer-events pass through) */
+#crt { position: fixed; inset: 0; pointer-events: none; }
+#crt::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(to bottom,
+    rgba(0,0,0,0) 0px, rgba(0,0,0,0) 3px, rgba(0,0,0,0.18) 4px);
+}
+#crt::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center,
+    rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%);
+}
+
+#idle-prompt {
+  position: fixed; left: 50%; bottom: 18vh; transform: translateX(-50%);
+  font: 14px Menlo, monospace; letter-spacing: 0.3em;
+  color: #8a7aa8; text-shadow: 0 0 8px #b64fff;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+#controls {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; gap: 14px; align-items: center;
+  padding: 10px 16px; font: 13px Menlo, monospace; color: #00e5ff;
+  background: linear-gradient(to top, rgba(10,1,24,0.85), rgba(10,1,24,0));
+  transition: opacity 0.5s; opacity: 1;
+}
+#controls.hidden { opacity: 0; pointer-events: none; }
+#controls button {
+  background: none; border: 1px solid #ff2d95; color: #ff2d95;
+  font: inherit; padding: 2px 10px; cursor: pointer;
+}
+#controls button.active { background: #ff2d95; color: #0a0118; }
+#track-name { color: #8a7aa8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+#track-time { color: #00b3a4; margin-left: auto; }
+body.dragging::after {
+  content: 'DROP TO PLAY'; position: fixed; inset: 0; display: grid; place-items: center;
+  font: 24px Menlo, monospace; letter-spacing: 0.4em; color: #ffd319;
+  background: rgba(10,1,24,0.7); border: 2px dashed #ffd319; pointer-events: none;
+}
