@@ -60,13 +60,13 @@ export class GlyphCube {
     const cB = Math.cos(this.B), sB = Math.sin(this.B);
     const y1 = y * cA - z * sA, z1 = y * sA + z * cA; // rotate X
     const x2 = x * cB + z1 * sB, z2 = -x * sB + z1 * cB; // rotate Y
-    const size = 1 + (this._bass || 0) * 0.4;
+    const size = 1 + (this._bass || 0) * 0.25;
     const K2 = 5, dist = 5;
     const ooz = 1 / (dist + z2 * size);
-    // fit to the SMALLER screen axis so portrait (mobile) never overflows width.
-    // cols * 0.26 caps horizontal span; on wide desktops rows is the limit as before.
-    const fit = Math.min(rows, cols * 0.26);
-    const K1 = fit * 1.9 * 0.32 * K2;
+    // fit by height (rows), exactly like the torus, so the cube's footprint tracks
+    // the torus across every aspect ratio (small on wide desktop, large on tall mobile).
+    // coefficient 0.11 calibrated so the base footprint ≈ the torus on both form factors.
+    const K1 = rows * 1.9 * 0.11 * K2;
     const cx = cols / 2, cy = rows * 0.42;
     return {
       x: Math.round(cx + K1 * ooz * x2 * size),

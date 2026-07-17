@@ -46,7 +46,7 @@ function loop(now) {
     time: audio.time,
     duration: audio.duration,
     mode: audio.mode,
-    themeName: scenes[active].name,
+    nextThemeName: scenes[(active + 1) % scenes.length].name,
   });
   requestAnimationFrame(loop);
 }

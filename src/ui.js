@@ -37,12 +37,13 @@ export class UI {
     this.hideTimer = setTimeout(() => this.controls.classList.add('hidden'), 3000);
   }
 
-  update({ trackName, playing, time, duration, mode, themeName }) {
+  update({ trackName, playing, time, duration, mode, nextThemeName }) {
     this.playBtn.textContent = playing ? '❚❚' : '▸';
     this.micBtn.classList.toggle('active', mode === 'mic');
     this.nameEl.textContent = trackName || '—';
     this.idleEl.style.display = mode === 'idle' ? '' : 'none';
-    if (themeName) this.themeBtn.textContent = `◈ ${themeName}`;
+    // button advertises the NEXT area it will take you to; clicking cycles forward one
+    if (nextThemeName) this.themeBtn.textContent = `ENTER ${nextThemeName} →`;
     const fmt = (s) => {
       if (!isFinite(s) || s <= 0) return '';
       const m = Math.floor(s / 60);
