@@ -54,19 +54,19 @@ export class GlyphCube {
     this._t = (this._t || 0) + dt;
   }
 
-  _project(v, cols, rows) {
+  // project a 3D point (rotated by A/B) to a grid cell + inverse depth (ooz)
+  _project3(x, y, z, cols, rows) {
     const cA = Math.cos(this.A), sA = Math.sin(this.A);
     const cB = Math.cos(this.B), sB = Math.sin(this.B);
-    let [x, y, z] = v;
-    // rotate X
-    let y1 = y * cA - z * sA, z1 = y * sA + z * cA;
-    // rotate Y
-    let x2 = x * cB + z1 * sB, z2 = -x * sB + z1 * cB;
-    const size = 1 + (this._bass || 0) * 0.5;
+    const y1 = y * cA - z * sA, z1 = y * sA + z * cA; // rotate X
+    const x2 = x * cB + z1 * sB, z2 = -x * sB + z1 * cB; // rotate Y
+    const size = 1 + (this._bass || 0) * 0.4;
     const K2 = 5, dist = 5;
-    const zc = dist + z2 * size;
-    const ooz = 1 / zc;
-    const K1 = rows * 1.9 * 0.32 * K2;
+    const ooz = 1 / (dist + z2 * size);
+    // fit to the SMALLER screen axis so portrait (mobile) never overflows width.
+    // cols * 0.26 caps horizontal span; on wide desktops rows is the limit as before.
+    const fit = Math.min(rows, cols * 0.26);
+    const K1 = fit * 1.9 * 0.32 * K2;
     const cx = cols / 2, cy = rows * 0.42;
     return {
       x: Math.round(cx + K1 * ooz * x2 * size),
@@ -77,27 +77,39 @@ export class GlyphCube {
 
   paint(grid, palette) {
     const { cols, rows } = grid;
-    const pts = V.map((v) => this._project(v, cols, rows));
+    if (!this.zbuf || this.zbuf.length !== cols * rows) this.zbuf = new Float32Array(cols * rows);
+    this.zbuf.fill(0);
+    const OOZ_MIN = 1 / 6.5, OOZ_MAX = 1 / 3.5; // depth range for shading
 
-    // interior cascade glyphs sampled across each face
+    // solid faces: sample each face in 3D, project with real depth, z-buffer so
+    // nearer glyphs occlude farther ones — gives the cube volume like the torus.
     for (let fi = 0; fi < FACES.length; fi++) {
       const [a, b, c, d] = FACES[fi];
-      for (let u = 0.1; u < 0.95; u += 0.16) {
-        for (let w = 0.1; w < 0.95; w += 0.12) {
-          // bilinear on projected face corners
-          const top = { x: pts[a].x + (pts[b].x - pts[a].x) * u, y: pts[a].y + (pts[b].y - pts[a].y) * u };
-          const bot = { x: pts[d].x + (pts[c].x - pts[d].x) * u, y: pts[d].y + (pts[c].y - pts[d].y) * u };
-          const wc = (w + this.cascade) % 1;
-          const px = Math.round(top.x + (bot.x - top.x) * wc);
-          const py = Math.round(top.y + (bot.y - top.y) * wc);
-          const bright = 0.3 + wc * 0.5 + (this._bass || 0) * 0.2;
-          const col = lerpColor(palette.trail, palette.head, Math.min(1, bright));
-          grid.set(px, py, glyphAt(u * 7 + w * 13 + fi + this.cascade), col);
+      const Va = V[a], Vb = V[b], Vc = V[c], Vd = V[d];
+      for (let u = 0; u <= 1.0001; u += 0.07) {
+        for (let w = 0; w <= 1.0001; w += 0.07) {
+          // bilinear interpolation in 3D across the face
+          const x = (Va[0] * (1 - u) + Vb[0] * u) * (1 - w) + (Vd[0] * (1 - u) + Vc[0] * u) * w;
+          const y = (Va[1] * (1 - u) + Vb[1] * u) * (1 - w) + (Vd[1] * (1 - u) + Vc[1] * u) * w;
+          const z = (Va[2] * (1 - u) + Vb[2] * u) * (1 - w) + (Vd[2] * (1 - u) + Vc[2] * u) * w;
+          const p = this._project3(x, y, z, cols, rows);
+          if (p.x < 0 || p.x >= cols || p.y < 0 || p.y >= rows) continue;
+          const idx = p.y * cols + p.x;
+          if (p.ooz <= this.zbuf[idx]) continue; // occluded by a nearer point
+          this.zbuf[idx] = p.ooz;
+          let depth = (p.ooz - OOZ_MIN) / (OOZ_MAX - OOZ_MIN);
+          depth = Math.max(0, Math.min(1, depth));
+          const casc = (w + this.cascade) % 1;
+          const bright = Math.min(1, 0.22 + depth * 0.6 + (this._bass || 0) * 0.15 + casc * 0.08);
+          let color = lerpColor(palette.trail, palette.head, bright);
+          if (this._treble > 0.3 && depth > 0.7 && Math.random() < this._treble * 0.1) color = palette.highlight;
+          grid.set(p.x, p.y, glyphAt(x * 3 + y * 5 + z * 7 + this.cascade * 4), color);
         }
       }
     }
 
-    // edges (brightest, drawn last)
+    // edges brightest, drawn on top
+    const pts = V.map((v) => this._project3(v[0], v[1], v[2], cols, rows));
     for (const [i, j] of EDGES) {
       const p0 = pts[i], p1 = pts[j];
       const steps = Math.max(Math.abs(p1.x - p0.x), Math.abs(p1.y - p0.y), 1);

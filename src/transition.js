@@ -1,5 +1,5 @@
 const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺ0123456789ﾊﾋﾌﾍﾎﾘﾙﾚﾛﾝ:=+*<>';
-const DUR = 0.4;
+const DUR = 1.5;
 
 export class Transition {
   constructor() {
@@ -29,7 +29,8 @@ export class Transition {
   paint(grid, palette) {
     if (!this.active) return;
     const p = this.t / DUR; // 0..1
-    const coverage = Math.sin(p * Math.PI) * 0.5; // peaks 0.5 at midpoint
+    // smooth raised-sine: eases in from 0, peaks ~0.72 at midpoint, eases back out
+    const coverage = Math.pow(Math.sin(p * Math.PI), 1.4) * 0.72;
     const n = Math.floor(grid.cols * grid.rows * coverage);
     for (let i = 0; i < n; i++) {
       const x = Math.floor(Math.random() * grid.cols);
