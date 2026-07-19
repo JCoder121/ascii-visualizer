@@ -31,8 +31,9 @@ export class VaporwaveScene {
 
   paint(grid) {
     this.stars.paint(grid, VAPORWAVE);
-    this.torus.paint(grid, this._a, VAPORWAVE);
     this.floor.paint(grid, VAPORWAVE);
     this.skyline.paint(grid, VAPORWAVE);
+    // hero last — nothing may cut through the torus
+    this.torus.paint(grid, this._a, VAPORWAVE);
   }
 }

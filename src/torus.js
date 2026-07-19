@@ -36,7 +36,13 @@ export class Torus {
     const cx = cols / 2;
     const cy = rows * 0.42;
     // fit by height; 1.9 = cell aspect, 0.53 ≈ 1/1.9 corrects y
-    const K1 = (rows * 1.9 * 0.5 * K2 * 3) / (8 * (R1 + R2));
+    // landscape screens get a 1.25x boost — fit-by-rows runs small there
+    const wide = cols > rows * 1.9 ? 1.25 : 1;
+    let K1 = (wide * rows * 1.9 * 0.5 * K2 * 3) / (8 * (R1 + R2));
+    // portrait guard: bass swell may not push the torus past the screen edges
+    // (mid-depth magnification approximates the real projected half-width)
+    const halfW = (K1 * (R1 + R2)) / (K2 - (R1 + R2) / 2);
+    if (halfW > cols * 0.48) K1 *= (cols * 0.48) / halfW;
     const halfH = (K1 * 0.53 * (R1 + R2)) / (K2 - R1 - R2) ;
     if (!this.zbuf || this.zbuf.length !== cols * rows) this.zbuf = new Float32Array(cols * rows);
     this.zbuf.fill(0);

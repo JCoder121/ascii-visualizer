@@ -47,8 +47,12 @@ test('skyline bars hug the bottom, scale with spectrum', () => {
   s.paint(g, THEME);
   assert.ok(g.calls.length > 100);
   assert.ok(g.calls.every(c => c.y >= 50 - 8));
-  const quiet = mockGrid(160, 50);
-  s.update({ ...FRAME, spectrum: new Float32Array(64).fill(0.1) }, 0.016);
-  s.paint(quiet, THEME);
+  // bars decay over time (fast attack / slow fall) — give the quiet phase a second
+  let quiet;
+  for (let i = 0; i < 60; i++) {
+    quiet = mockGrid(160, 50);
+    s.update({ ...FRAME, spectrum: new Float32Array(64).fill(0.1) }, 0.016);
+    s.paint(quiet, THEME);
+  }
   assert.ok(quiet.calls.length < g.calls.length);
 });

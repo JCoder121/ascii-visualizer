@@ -14,6 +14,7 @@ export const MATRIX = {
   trail: '#008f11',
   highlight: '#c8ffd0',
   accent: '#eaffea',
+  skyline: '#00d838',
 };
 
 export const RAMP = '.:-=+*#%@';

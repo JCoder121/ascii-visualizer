@@ -23,6 +23,61 @@ export function fillSpectrum(freq, out) {
   }
 }
 
+// Chrome's default mic pick can be a signal-less virtual driver (Background
+// Music, Teams, Zoom). Choose a concrete real input instead: built-in first,
+// then any non-virtual device. Null when only virtual devices exist.
+export function pickMicDevice(devices) {
+  const real = devices.filter(
+    (d) =>
+      d.kind === 'audioinput' &&
+      d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications' &&
+      !/virtual/i.test(d.label)
+  );
+  if (!real.length) return null;
+  return real.find((d) => /built-in|internal/i.test(d.label)) || real[0];
+}
+
+// Auto-gain: tracks a fast-attack / slow-release peak of the incoming level so
+// quiet playback (e.g. music near a laptop mic) still drives the full visual
+// range. `floor` caps the max boost — silence stays calm instead of amplifying
+// mic noise to full scale.
+export class Agc {
+  constructor({ floor = 0.08, gain = 0.85 } = {}) {
+    this.floor = floor;
+    this.gain = gain;
+    this.peak = floor;
+  }
+  step(v, dt) {
+    const k = v > this.peak ? 1 - Math.exp(-dt * 10) : 1 - Math.exp(-dt / 5);
+    this.peak = Math.max(this.floor, this.peak + (v - this.peak) * k);
+  }
+  norm(v) {
+    return Math.min(1, (v / this.peak) * this.gain);
+  }
+}
+
+// Drop detection on (normalized) bass: fast EMA punching through slow EMA.
+export class DropDetector {
+  constructor({ floor = 0.18, ratio = 1.32, cooldown = 0.4 } = {}) {
+    this.floor = floor;
+    this.ratio = ratio;
+    this.cooldownDur = cooldown;
+    this.emaFast = 0;
+    this.emaSlow = 0;
+    this.cooldown = 0;
+  }
+  step(bass, dt) {
+    this.emaFast += (bass - this.emaFast) * (1 - Math.exp(-dt * 25));
+    this.emaSlow += (bass - this.emaSlow) * (1 - Math.exp(-dt * 2.5));
+    this.cooldown = Math.max(0, this.cooldown - dt);
+    if (this.cooldown === 0 && this.emaFast > this.floor && this.emaFast > this.emaSlow * this.ratio) {
+      this.cooldown = this.cooldownDur;
+      return true;
+    }
+    return false;
+  }
+}
+
 export class AudioEngine {
   constructor() {
     this.ctx = null;
@@ -35,7 +90,8 @@ export class AudioEngine {
     this.micSrc = null;
     this.trackName = '';
     this.sBass = 0; this.sMids = 0; this.sTreble = 0;
-    this.emaFast = 0; this.emaSlow = 0; this.cooldown = 0;
+    this.agc = new Agc();
+    this.dropDetector = new DropDetector();
     this.spectrum = new Float32Array(64);
     this._t = 0;
   }
@@ -70,11 +126,30 @@ export class AudioEngine {
   async useMic() {
     this._ensureCtx();
     if (this.audioEl) this.audioEl.pause();
-    this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Voice-call processing (noise suppression etc.) filters music out of the
+    // signal — disable it; we want the raw room audio.
+    const RAW = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    let stream = await navigator.mediaDevices.getUserMedia({ audio: { ...RAW } });
+    // Labels are only visible after permission; if the default pick is a
+    // virtual device, swap to a real input.
+    if (/virtual/i.test(stream.getAudioTracks()[0]?.label || '')) {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const better = pickMicDevice(devices);
+      if (better) {
+        const s2 = await navigator.mediaDevices
+          .getUserMedia({ audio: { ...RAW, deviceId: { exact: better.deviceId } } })
+          .catch(() => null);
+        if (s2) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = s2;
+        }
+      }
+    }
+    this.micStream = stream;
     this.micSrc = this.ctx.createMediaStreamSource(this.micStream);
     this.micSrc.connect(this.analyser);
     this.mode = 'mic';
-    this.trackName = 'microphone';
+    this.trackName = stream.getAudioTracks()[0]?.label || 'microphone';
   }
 
   stopMic() {
@@ -105,20 +180,16 @@ export class AudioEngine {
     if (!this.playing) return this._idleFrame();
     this.analyser.getByteFrequencyData(this.freq);
     const raw = computeBands(this.freq, this.ctx.sampleRate);
+    this.agc.step(Math.max(raw.bass, raw.mids, raw.treble), dt);
     const k = 1 - Math.exp(-dt * 12);
-    this.sBass += (raw.bass - this.sBass) * k;
-    this.sMids += (raw.mids - this.sMids) * k;
-    this.sTreble += (raw.treble - this.sTreble) * k;
+    this.sBass += (this.agc.norm(raw.bass) - this.sBass) * k;
+    this.sMids += (this.agc.norm(raw.mids) - this.sMids) * k;
+    this.sTreble += (this.agc.norm(raw.treble) - this.sTreble) * k;
     fillSpectrum(this.freq, this.spectrum);
-    // drop detection: fast bass EMA punching through slow EMA
-    this.emaFast += (raw.bass - this.emaFast) * (1 - Math.exp(-dt * 25));
-    this.emaSlow += (raw.bass - this.emaSlow) * (1 - Math.exp(-dt * 2.5));
-    this.cooldown = Math.max(0, this.cooldown - dt);
-    let drop = false;
-    if (this.cooldown === 0 && this.emaFast > 0.28 && this.emaFast > this.emaSlow * 1.45) {
-      drop = true;
-      this.cooldown = 0.4;
+    for (let i = 0; i < this.spectrum.length; i++) {
+      this.spectrum[i] = this.agc.norm(this.spectrum[i]);
     }
+    const drop = this.dropDetector.step(this.agc.norm(raw.bass), dt);
     return {
       bass: this.sBass, mids: this.sMids, treble: this.sTreble,
       level: (this.sBass + this.sMids + this.sTreble) / 3,

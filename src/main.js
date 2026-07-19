@@ -36,7 +36,8 @@ function loop(now) {
 
   const g = renderer.grid;
   g.clear();
-  scene.paint(g);
+  renderer.sub.clear();
+  scene.paint(g, renderer.sub);
   transition.paint(g, MATRIX);
   renderer.draw(scene.flash, scene.bg, scene.accent);
 

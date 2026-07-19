@@ -11,28 +11,29 @@ export class DigitalRain {
     this.h = 0;
   }
 
+  // speed/len are fractions of grid height so the look is resolution-independent
+  _drop(rows) {
+    return {
+      y: -Math.random() * rows * 0.25,
+      speed: (rows * (0.18 + Math.random() * 0.49)) / 2, // screen-heights/sec
+      len: Math.max(3, Math.floor((rows * (0.13 + Math.random() * 0.31)) / 3)),
+      seed: Math.random() * 1000,
+    };
+  }
+
   _init(cols, rows) {
     this.w = cols;
     this.h = rows;
-    this.cols = Array.from({ length: cols }, () => ({
-      y: Math.random() * rows,
-      speed: 8 + Math.random() * 22,   // cells/sec baseline
-      len: 6 + Math.floor(Math.random() * 14),
-      seed: Math.random() * 1000,
-    }));
+    this.cols = Array.from({ length: cols }, () => ({ ...this._drop(rows), y: Math.random() * rows }));
   }
 
   update(audio, dt) {
     if (!this.cols || this.w === 0) this._init(this.w || 1, this.h || 1);
-    const mult = 0.6 + (audio.mids + audio.level) * 2.2;
+    const mult = 0.6 + ((audio.mids + audio.level) * 2.2) / 3;
     for (let i = 0; i < this.cols.length; i++) {
       const c = this.cols[i];
       c.y += c.speed * mult * dt;
-      if (c.y - c.len > this.h) {
-        c.y = -Math.random() * 10;
-        c.len = 6 + Math.floor(Math.random() * 14);
-        c.speed = 8 + Math.random() * 22;
-      }
+      if (c.y - c.len > this.h) Object.assign(c, this._drop(this.h));
     }
     this.bass = audio.bass;
     this.treble = audio.treble;

@@ -38,7 +38,9 @@ export class Renderer {
     const cols = Math.floor(this.canvas.width / this.cellW);
     const rows = Math.floor(this.canvas.height / this.cellH);
     this.grid = new CellGrid(cols, rows);
+    this.sub = new CellGrid(cols * 2, rows * 2); // half-size-glyph background pass
     this.font = `${Math.round(this.cellW * 1.6)}px Menlo, "SF Mono", monospace`;
+    this.subFont = `${Math.round(this.cellW * 0.8)}px Menlo, "SF Mono", monospace`;
     this.atlas.clear();
     this.scene = document.createElement('canvas');
     this.scene.width = this.canvas.width;
@@ -46,20 +48,22 @@ export class Renderer {
     this.sctx = this.scene.getContext('2d');
   }
 
-  _glyph(ch, color) {
-    const key = ch + color;
+  _glyph(ch, color, half = false) {
+    const key = (half ? 'h' : 'f') + ch + color;
     let g = this.atlas.get(key);
     if (!g) {
       if (this.atlas.size > 5000) this.atlas.clear(); // safety valve
+      const w = half ? Math.ceil(this.cellW / 2) : this.cellW;
+      const h = half ? Math.ceil(this.cellH / 2) : this.cellH;
       g = document.createElement('canvas');
-      g.width = this.cellW;
-      g.height = this.cellH;
+      g.width = w;
+      g.height = h;
       const c = g.getContext('2d');
-      c.font = this.font;
+      c.font = half ? this.subFont : this.font;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillStyle = color;
-      c.fillText(ch, this.cellW / 2, this.cellH / 2);
+      c.fillText(ch, w / 2, h / 2);
       this.atlas.set(key, g);
     }
     return g;
@@ -71,6 +75,17 @@ export class Renderer {
     sctx.globalAlpha = 1;
     sctx.fillStyle = bgHex;
     sctx.fillRect(0, 0, this.scene.width, this.scene.height);
+    const sub = this.sub;
+    const hw = this.cellW / 2, hh = this.cellH / 2;
+    for (let y = 0; y < sub.rows; y++) {
+      const py = y * hh;
+      const row = y * sub.cols;
+      for (let x = 0; x < sub.cols; x++) {
+        const ch = sub.ch[row + x];
+        if (ch === ' ') continue;
+        sctx.drawImage(this._glyph(ch, sub.color[row + x], true), x * hw, py);
+      }
+    }
     for (let y = 0; y < grid.rows; y++) {
       const py = y * this.cellH;
       const row = y * grid.cols;
