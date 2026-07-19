@@ -2,7 +2,9 @@
 import { dim } from '../theme.js';
 
 const BLOCKS = '▁▂▃▄▅▆▇';
-const MAX_H = 7; // rows
+// bar height scales with the grid so phones (tall, many rows) get a visible
+// meter, floored at the 7-row desktop look
+const maxH = (rows) => Math.max(7, Math.round(rows * 0.1));
 
 export class Skyline {
   constructor() {
@@ -33,10 +35,11 @@ export class Skyline {
       // punchy dynamics: fast rise, slow fall
       const k = target > this.disp[i] ? 1 - Math.exp(-dt * 30) : 1 - Math.exp(-dt * 6);
       this.disp[i] += (target - this.disp[i]) * k;
-      const h = Math.min(MAX_H, this.disp[i] * MAX_H);
+      const M = maxH(grid.rows);
+      const h = Math.min(M, this.disp[i] * M);
       const full = Math.floor(h);
       for (let k = 0; k < full; k++) {
-        grid.set(x, grid.rows - 1 - k, '█', dim(theme.skyline, 0.16 + 0.22 * (1 - k / MAX_H)));
+        grid.set(x, grid.rows - 1 - k, '█', dim(theme.skyline, 0.16 + 0.22 * (1 - k / M)));
       }
       const frac = Math.floor((h - full) * (BLOCKS.length + 1));
       if (frac > 0) grid.set(x, grid.rows - 1 - full, BLOCKS[frac - 1], dim(theme.skyline, 0.34));

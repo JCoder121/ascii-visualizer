@@ -17,6 +17,13 @@ export const MATRIX = {
   skyline: '#00d838',
 };
 
+export const BLADERUNNER = {
+  bg: '#0d0602', heroA: '#ffb000', heroB: '#ff6a00',
+  city: '#3a1f0a', window: '#ffd27a',
+  rainA: '#6b7f8f', rainB: '#274050',
+  beam: '#fff3c4', skyline: '#ff8c00', accent: '#54e8ff',
+};
+
 export const RAMP = '.:-=+*#%@';
 
 function hexToRgb(hex) {

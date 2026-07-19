@@ -3,12 +3,13 @@ import { Renderer } from './renderer.js';
 import { AudioEngine } from './audio.js';
 import { VaporwaveScene } from './scenes/vaporwave.js';
 import { MatrixScene } from './scenes/matrix.js';
+import { BladeRunnerScene } from './scenes/bladerunner.js';
 import { Transition } from './transition.js';
 import { UI } from './ui.js';
 
 const renderer = new Renderer(document.getElementById('view'));
 const audio = new AudioEngine();
-const scenes = [new VaporwaveScene(), new MatrixScene()];
+const scenes = [new VaporwaveScene(), new MatrixScene(), new BladeRunnerScene()];
 const transition = new Transition();
 let active = 0;
 
