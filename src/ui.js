@@ -43,7 +43,7 @@ export class UI {
     this.nameEl.textContent = trackName || '—';
     this.idleEl.style.display = mode === 'idle' ? '' : 'none';
     // button advertises the NEXT area it will take you to; clicking cycles forward one
-    if (nextThemeName) this.themeBtn.textContent = `ENTER ${nextThemeName} →`;
+    if (nextThemeName) this.themeBtn.textContent = `${nextThemeName} →`;
     const fmt = (s) => {
       if (!isFinite(s) || s <= 0) return '';
       const m = Math.floor(s / 60);
