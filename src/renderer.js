@@ -21,8 +21,9 @@ export class CellGrid {
 }
 
 export class Renderer {
-  constructor(canvas) {
+  constructor(canvas, measure = () => [innerWidth, innerHeight]) {
     this.canvas = canvas;
+    this.measure = measure;
     this.ctx = canvas.getContext('2d');
     this.atlas = new Map();
     this.resize();
@@ -31,8 +32,9 @@ export class Renderer {
 
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = Math.floor(innerWidth * dpr);
-    this.canvas.height = Math.floor(innerHeight * dpr);
+    const [w, h] = this.measure();
+    this.canvas.width = Math.floor(w * dpr);
+    this.canvas.height = Math.floor(h * dpr);
     this.cellW = Math.max(5, Math.floor(this.canvas.width / TARGET_COLS));
     this.cellH = Math.round(this.cellW * CELL_ASPECT);
     const cols = Math.floor(this.canvas.width / this.cellW);

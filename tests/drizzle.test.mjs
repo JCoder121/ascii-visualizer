@@ -36,16 +36,22 @@ test('streaks move down (and drift with the wind) over time', () => {
   const beforeY = d.drops.map(s => s.y);
   const beforeX = d.drops.map(s => s.x);
   d.update(frame(), 0.05);
-  const dy = d.drops.reduce((s, v, i) => s + (v.y - beforeY[i]), 0);
-  const dx = d.drops.reduce((s, v, i) => s + (v.x - beforeX[i]), 0);
-  assert.ok(dy > 0, 'streaks should fall');
+  // respawned streaks jump to a fresh random x/y — only survivors show the wind
+  const alive = d.drops.map((v, i) => [v, i]).filter(([v, i]) => v.y > beforeY[i]);
+  assert.ok(alive.length > 0, 'expected surviving streaks');
+  const dx = alive.reduce((s, [v, i]) => s + (v.x - beforeX[i]), 0);
   assert.ok(dx < 0, 'wind should slant streaks leftward');
 });
 
 test('louder audio falls faster; head is brighter than tail', () => {
+  // same streak state for both levels — independent random speeds made this flaky
+  const base = new Drizzle();
+  base._init(120, 80);
+  const snapshot = base.drops.map(s => ({ ...s, y: 20 }));
   const fallen = (lvl) => {
     const d = new Drizzle();
     d._init(120, 80);
+    d.drops = snapshot.map(s => ({ ...s }));
     const before = d.drops.map(s => s.y);
     d.update(frame({ level: lvl }), 0.05);
     return d.drops.reduce((s, v, i) => s + (v.y - before[i]), 0);
