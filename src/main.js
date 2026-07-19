@@ -1,4 +1,3 @@
-import { MATRIX } from './theme.js';
 import { Renderer } from './renderer.js';
 import { AudioEngine } from './audio.js';
 import { VaporwaveScene } from './scenes/vaporwave.js';
@@ -20,7 +19,7 @@ const ui = new UI({
   onCycleTheme: () => {
     if (transition.active) return;
     const next = (active + 1) % scenes.length;
-    transition.start(() => { active = next; });
+    transition.start(() => { active = next; }, scenes[active].glitch, scenes[next].glitch);
   },
 });
 
@@ -39,7 +38,7 @@ function loop(now) {
   g.clear();
   renderer.sub.clear();
   scene.paint(g, renderer.sub);
-  transition.paint(g, MATRIX);
+  transition.paint(g);
   renderer.draw(scene.flash, scene.bg, scene.accent);
 
   ui.update({

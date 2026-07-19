@@ -8,6 +8,7 @@ export class MatrixScene {
     this.name = 'MATRIX';
     this.bg = MATRIX.bg;
     this.accent = MATRIX.accent;
+    this.glitch = { head: MATRIX.head, highlight: MATRIX.highlight };
     this.cube = new GlyphCube();
     this.rain = new DigitalRain();
     this.skyline = new Skyline();

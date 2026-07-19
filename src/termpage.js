@@ -1,6 +1,5 @@
 // src/termpage.js — the simulated terminal running the TUI in a web page.
 // Demo audio by default (SimAudio); MIC or a dropped track upgrades to live.
-import { MATRIX } from './theme.js';
 import { Renderer } from './renderer.js';
 import { AudioEngine } from './audio.js';
 import { SimAudio } from './simaudio.js';
@@ -48,7 +47,7 @@ type();
 function nextScene() {
   if (transition.active) return;
   const next = (active + 1) % scenes.length;
-  transition.start(() => { active = next; });
+  transition.start(() => { active = next; }, scenes[active].glitch, scenes[next].glitch);
 }
 
 function wireActions() {
@@ -94,7 +93,7 @@ function loop(now) {
   g.clear();
   renderer.sub.clear();
   scene.paint(g, renderer.sub);
-  transition.paint(g, MATRIX);
+  transition.paint(g);
   renderer.draw(scene.flash, scene.bg, scene.accent);
   const src = live && engine.playing
     ? (engine.mode === 'mic' ? 'mic' : engine.trackName) : 'demo';

@@ -10,6 +10,7 @@ export class BladeRunnerScene {
     this.name = 'BLADE RUNNER';
     this.bg = BLADERUNNER.bg;
     this.accent = BLADERUNNER.accent;
+    this.glitch = { head: BLADERUNNER.heroA, highlight: BLADERUNNER.accent };
     this.pyramid = new GlyphPyramid();
     this.city = new Cityscape();
     this.drizzle = new Drizzle();

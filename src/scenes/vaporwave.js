@@ -9,6 +9,7 @@ export class VaporwaveScene {
     this.name = 'VAPORWAVE';
     this.bg = VAPORWAVE.bg;
     this.accent = VAPORWAVE.accent;
+    this.glitch = { head: VAPORWAVE.heroA, highlight: VAPORWAVE.accent };
     this.torus = new Torus();
     this.stars = new Stars();
     this.floor = new GridFloor();

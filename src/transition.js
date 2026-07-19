@@ -1,5 +1,6 @@
 const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺ0123456789ﾊﾋﾌﾍﾎﾘﾙﾚﾛﾝ:=+*<>';
 const DUR = 1.5;
+const DEFAULT_GLITCH = { head: '#00ff41', highlight: '#c8ffd0' };
 
 export class Transition {
   constructor() {
@@ -7,13 +8,19 @@ export class Transition {
     this.t = 0;
     this._swapped = false;
     this._onSwap = null;
+    this._from = DEFAULT_GLITCH;
+    this._to = DEFAULT_GLITCH;
   }
 
-  start(onMidpointSwap) {
+  // glitch wears the outgoing palette until the midpoint swap, then the
+  // incoming one — the storm "blends" into the next scene
+  start(onMidpointSwap, fromGlitch, toGlitch) {
     this.active = true;
     this.t = 0;
     this._swapped = false;
     this._onSwap = onMidpointSwap;
+    this._from = fromGlitch || DEFAULT_GLITCH;
+    this._to = toGlitch || DEFAULT_GLITCH;
   }
 
   update(dt) {
@@ -26,8 +33,9 @@ export class Transition {
     if (this.t >= DUR) this.active = false;
   }
 
-  paint(grid, palette) {
+  paint(grid) {
     if (!this.active) return;
+    const palette = this.t < DUR / 2 ? this._from : this._to;
     const p = this.t / DUR; // 0..1
     // smooth raised-sine: eases in from 0, peaks ~0.72 at midpoint, eases back out
     const coverage = Math.pow(Math.sin(p * Math.PI), 1.4) * 0.72;
